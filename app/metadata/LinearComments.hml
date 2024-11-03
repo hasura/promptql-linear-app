@@ -1,0 +1,214 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: LinearComments
+  description: No description available
+  fields:
+    - name: body
+      type: String
+      description: No description available
+    - name: botType
+      type: String
+      description: No description available
+    - name: botUser
+      type: String
+      description: No description available
+    - name: createdAt
+      type: Timestamp
+      description: No description available
+    - name: id
+      type: String
+      description: No description available
+    - name: issueId
+      type: String
+      description: No description available
+    - name: updatedAt
+      type: Timestamp
+      description: No description available
+    - name: userEmail
+      type: String
+      description: No description available
+    - name: userName
+      type: String
+      description: No description available
+  graphql:
+    typeName: LinearComments
+    inputTypeName: LinearCommentsInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: linear
+      dataConnectorObjectType: linear_comments
+      fieldMapping:
+        body:
+          column:
+            name: body
+        botType:
+          column:
+            name: bot_type
+        botUser:
+          column:
+            name: bot_user
+        createdAt:
+          column:
+            name: created_at
+        id:
+          column:
+            name: id
+        issueId:
+          column:
+            name: issue_id
+        updatedAt:
+          column:
+            name: updated_at
+        userEmail:
+          column:
+            name: user_email
+        userName:
+          column:
+            name: user_name
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: LinearComments
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - body
+          - botType
+          - botUser
+          - createdAt
+          - id
+          - issueId
+          - updatedAt
+          - userEmail
+          - userName
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: LinearCommentsBoolExp
+  operand:
+    object:
+      type: LinearComments
+      comparableFields:
+        - fieldName: body
+          booleanExpressionType: StringBoolExp
+        - fieldName: botType
+          booleanExpressionType: StringBoolExp
+        - fieldName: botUser
+          booleanExpressionType: StringBoolExp
+        - fieldName: createdAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: id
+          booleanExpressionType: StringBoolExp
+        - fieldName: issueId
+          booleanExpressionType: StringBoolExp
+        - fieldName: updatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: userEmail
+          booleanExpressionType: StringBoolExp
+        - fieldName: userName
+          booleanExpressionType: StringBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: LinearCommentsBoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: LinearCommentsAggExp
+  operand:
+    object:
+      aggregatedType: LinearComments
+      aggregatableFields:
+        - fieldName: body
+          aggregateExpression: StringAggExp
+        - fieldName: botType
+          aggregateExpression: StringAggExp
+        - fieldName: botUser
+          aggregateExpression: StringAggExp
+        - fieldName: createdAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: id
+          aggregateExpression: StringAggExp
+        - fieldName: issueId
+          aggregateExpression: StringAggExp
+        - fieldName: updatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: userEmail
+          aggregateExpression: StringAggExp
+        - fieldName: userName
+          aggregateExpression: StringAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: LinearCommentsAggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: LinearComments
+  objectType: LinearComments
+  source:
+    dataConnectorName: linear
+    collection: linear_comments
+  filterExpressionType: LinearCommentsBoolExp
+  aggregateExpression: LinearCommentsAggExp
+  orderableFields:
+    - fieldName: body
+      orderByDirections:
+        enableAll: true
+    - fieldName: botType
+      orderByDirections:
+        enableAll: true
+    - fieldName: botUser
+      orderByDirections:
+        enableAll: true
+    - fieldName: createdAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: id
+      orderByDirections:
+        enableAll: true
+    - fieldName: issueId
+      orderByDirections:
+        enableAll: true
+    - fieldName: updatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: userEmail
+      orderByDirections:
+        enableAll: true
+    - fieldName: userName
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: linearComments
+    selectUniques: []
+    orderByExpressionType: LinearCommentsOrderBy
+    filterInputTypeName: LinearCommentsFilterInput
+    aggregate:
+      queryRootField: linearCommentsAggregate
+  description: No description available
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: LinearComments
+  permissions:
+    - role: admin
+      select:
+        filter: null
+

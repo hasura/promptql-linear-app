@@ -1,0 +1,368 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: LinearIssues
+  description: No description available
+  fields:
+    - name: assigneeEmail
+      type: String
+      description: No description available
+    - name: assigneeName
+      type: String
+      description: No description available
+    - name: botType
+      type: String
+      description: No description available
+    - name: botUser
+      type: String
+      description: No description available
+    - name: completedAt
+      type: Timestamp
+      description: No description available
+    - name: createdAt
+      type: Timestamp
+      description: No description available
+    - name: creatorEmail
+      type: String
+      description: No description available
+    - name: creatorName
+      type: String
+      description: No description available
+    - name: description
+      type: String
+      description: No description available
+    - name: id
+      type: String
+      description: No description available
+    - name: identifier
+      type: String
+      description: No description available
+    - name: labels
+      type: String
+      description: No description available
+    - name: linkType
+      type: String
+      description: No description available
+    - name: linkUrl
+      type: String
+      description: No description available
+    - name: number
+      type: Int
+      description: No description available
+    - name: priority
+      type: Int
+      description: No description available
+    - name: state
+      type: String
+      description: No description available
+    - name: teamId
+      type: String
+      description: No description available
+    - name: title
+      type: String
+      description: No description available
+    - name: updatedAt
+      type: Timestamp
+      description: No description available
+  graphql:
+    typeName: LinearIssues
+    inputTypeName: LinearIssuesInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: linear
+      dataConnectorObjectType: linear_issues
+      fieldMapping:
+        assigneeEmail:
+          column:
+            name: assignee_email
+        assigneeName:
+          column:
+            name: assignee_name
+        botType:
+          column:
+            name: bot_type
+        botUser:
+          column:
+            name: bot_user
+        completedAt:
+          column:
+            name: completed_at
+        createdAt:
+          column:
+            name: created_at
+        creatorEmail:
+          column:
+            name: creator_email
+        creatorName:
+          column:
+            name: creator_name
+        description:
+          column:
+            name: description
+        id:
+          column:
+            name: id
+        identifier:
+          column:
+            name: identifier
+        labels:
+          column:
+            name: labels
+        linkType:
+          column:
+            name: link_type
+        linkUrl:
+          column:
+            name: link_url
+        number:
+          column:
+            name: number
+        priority:
+          column:
+            name: priority
+        state:
+          column:
+            name: state
+        teamId:
+          column:
+            name: team_id
+        title:
+          column:
+            name: title
+        updatedAt:
+          column:
+            name: updated_at
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: LinearIssues
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - assigneeEmail
+          - assigneeName
+          - botType
+          - botUser
+          - completedAt
+          - createdAt
+          - creatorEmail
+          - creatorName
+          - description
+          - id
+          - identifier
+          - labels
+          - linkType
+          - linkUrl
+          - number
+          - priority
+          - state
+          - teamId
+          - title
+          - updatedAt
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: LinearIssuesBoolExp
+  operand:
+    object:
+      type: LinearIssues
+      comparableFields:
+        - fieldName: assigneeEmail
+          booleanExpressionType: StringBoolExp
+        - fieldName: assigneeName
+          booleanExpressionType: StringBoolExp
+        - fieldName: botType
+          booleanExpressionType: StringBoolExp
+        - fieldName: botUser
+          booleanExpressionType: StringBoolExp
+        - fieldName: completedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: createdAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: creatorEmail
+          booleanExpressionType: StringBoolExp
+        - fieldName: creatorName
+          booleanExpressionType: StringBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: id
+          booleanExpressionType: StringBoolExp
+        - fieldName: identifier
+          booleanExpressionType: StringBoolExp
+        - fieldName: labels
+          booleanExpressionType: StringBoolExp
+        - fieldName: linkType
+          booleanExpressionType: StringBoolExp
+        - fieldName: linkUrl
+          booleanExpressionType: StringBoolExp
+        - fieldName: number
+          booleanExpressionType: IntBoolExp
+        - fieldName: priority
+          booleanExpressionType: IntBoolExp
+        - fieldName: state
+          booleanExpressionType: StringBoolExp
+        - fieldName: teamId
+          booleanExpressionType: StringBoolExp
+        - fieldName: title
+          booleanExpressionType: StringBoolExp
+        - fieldName: updatedAt
+          booleanExpressionType: TimestampBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: LinearIssuesBoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: LinearIssuesAggExp
+  operand:
+    object:
+      aggregatedType: LinearIssues
+      aggregatableFields:
+        - fieldName: assigneeEmail
+          aggregateExpression: StringAggExp
+        - fieldName: assigneeName
+          aggregateExpression: StringAggExp
+        - fieldName: botType
+          aggregateExpression: StringAggExp
+        - fieldName: botUser
+          aggregateExpression: StringAggExp
+        - fieldName: completedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: createdAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: creatorEmail
+          aggregateExpression: StringAggExp
+        - fieldName: creatorName
+          aggregateExpression: StringAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: id
+          aggregateExpression: StringAggExp
+        - fieldName: identifier
+          aggregateExpression: StringAggExp
+        - fieldName: labels
+          aggregateExpression: StringAggExp
+        - fieldName: linkType
+          aggregateExpression: StringAggExp
+        - fieldName: linkUrl
+          aggregateExpression: StringAggExp
+        - fieldName: number
+          aggregateExpression: IntAggExp
+        - fieldName: priority
+          aggregateExpression: IntAggExp
+        - fieldName: state
+          aggregateExpression: StringAggExp
+        - fieldName: teamId
+          aggregateExpression: StringAggExp
+        - fieldName: title
+          aggregateExpression: StringAggExp
+        - fieldName: updatedAt
+          aggregateExpression: TimestampAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: LinearIssuesAggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: LinearIssues
+  objectType: LinearIssues
+  source:
+    dataConnectorName: linear
+    collection: linear_issues
+  filterExpressionType: LinearIssuesBoolExp
+  aggregateExpression: LinearIssuesAggExp
+  orderableFields:
+    - fieldName: assigneeEmail
+      orderByDirections:
+        enableAll: true
+    - fieldName: assigneeName
+      orderByDirections:
+        enableAll: true
+    - fieldName: botType
+      orderByDirections:
+        enableAll: true
+    - fieldName: botUser
+      orderByDirections:
+        enableAll: true
+    - fieldName: completedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: createdAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: creatorEmail
+      orderByDirections:
+        enableAll: true
+    - fieldName: creatorName
+      orderByDirections:
+        enableAll: true
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: id
+      orderByDirections:
+        enableAll: true
+    - fieldName: identifier
+      orderByDirections:
+        enableAll: true
+    - fieldName: labels
+      orderByDirections:
+        enableAll: true
+    - fieldName: linkType
+      orderByDirections:
+        enableAll: true
+    - fieldName: linkUrl
+      orderByDirections:
+        enableAll: true
+    - fieldName: number
+      orderByDirections:
+        enableAll: true
+    - fieldName: priority
+      orderByDirections:
+        enableAll: true
+    - fieldName: state
+      orderByDirections:
+        enableAll: true
+    - fieldName: teamId
+      orderByDirections:
+        enableAll: true
+    - fieldName: title
+      orderByDirections:
+        enableAll: true
+    - fieldName: updatedAt
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: linearIssues
+    selectUniques: []
+    orderByExpressionType: LinearIssuesOrderBy
+    filterInputTypeName: LinearIssuesFilterInput
+    aggregate:
+      queryRootField: linearIssuesAggregate
+  description: No description available
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: LinearIssues
+  permissions:
+    - role: admin
+      select:
+        filter: null
+

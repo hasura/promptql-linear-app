@@ -1,0 +1,18 @@
+kind: Subgraph
+version: v2
+definition:
+  name: app
+  generator:
+    rootPath: .
+  includePaths:
+    - metadata
+  envMapping:
+    APP_LINEAR_AUTHORIZATION_HEADER:
+      fromEnv: APP_LINEAR_AUTHORIZATION_HEADER
+    APP_LINEAR_READ_URL:
+      fromEnv: APP_LINEAR_READ_URL
+    APP_LINEAR_WRITE_URL:
+      fromEnv: APP_LINEAR_WRITE_URL
+  connectors:
+    - path: connector/linear/connector.yaml
+      connectorLinkName: linear

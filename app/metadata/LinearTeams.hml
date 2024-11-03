@@ -1,0 +1,172 @@
+---
+kind: ObjectType
+version: v1
+definition:
+  name: LinearTeams
+  description: No description available
+  fields:
+    - name: createdAt
+      type: Timestamp
+      description: No description available
+    - name: description
+      type: String
+      description: No description available
+    - name: id
+      type: String
+      description: No description available
+    - name: key
+      type: String
+      description: No description available
+    - name: name
+      type: String
+      description: No description available
+    - name: updatedAt
+      type: Timestamp
+      description: No description available
+  graphql:
+    typeName: LinearTeams
+    inputTypeName: LinearTeamsInput
+  dataConnectorTypeMapping:
+    - dataConnectorName: linear
+      dataConnectorObjectType: linear_teams
+      fieldMapping:
+        createdAt:
+          column:
+            name: created_at
+        description:
+          column:
+            name: description
+        id:
+          column:
+            name: id
+        key:
+          column:
+            name: key
+        name:
+          column:
+            name: name
+        updatedAt:
+          column:
+            name: updated_at
+
+---
+kind: TypePermissions
+version: v1
+definition:
+  typeName: LinearTeams
+  permissions:
+    - role: admin
+      output:
+        allowedFields:
+          - createdAt
+          - description
+          - id
+          - key
+          - name
+          - updatedAt
+
+---
+kind: BooleanExpressionType
+version: v1
+definition:
+  name: LinearTeamsBoolExp
+  operand:
+    object:
+      type: LinearTeams
+      comparableFields:
+        - fieldName: createdAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: description
+          booleanExpressionType: StringBoolExp
+        - fieldName: id
+          booleanExpressionType: StringBoolExp
+        - fieldName: key
+          booleanExpressionType: StringBoolExp
+        - fieldName: name
+          booleanExpressionType: StringBoolExp
+        - fieldName: updatedAt
+          booleanExpressionType: TimestampBoolExp
+      comparableRelationships: []
+  logicalOperators:
+    enable: true
+  isNull:
+    enable: true
+  graphql:
+    typeName: LinearTeamsBoolExp
+
+---
+kind: AggregateExpression
+version: v1
+definition:
+  name: LinearTeamsAggExp
+  operand:
+    object:
+      aggregatedType: LinearTeams
+      aggregatableFields:
+        - fieldName: createdAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: description
+          aggregateExpression: StringAggExp
+        - fieldName: id
+          aggregateExpression: StringAggExp
+        - fieldName: key
+          aggregateExpression: StringAggExp
+        - fieldName: name
+          aggregateExpression: StringAggExp
+        - fieldName: updatedAt
+          aggregateExpression: TimestampAggExp
+  count:
+    enable: true
+  graphql:
+    selectTypeName: LinearTeamsAggExp
+
+---
+kind: Model
+version: v1
+definition:
+  name: LinearTeams
+  objectType: LinearTeams
+  source:
+    dataConnectorName: linear
+    collection: linear_teams
+  filterExpressionType: LinearTeamsBoolExp
+  aggregateExpression: LinearTeamsAggExp
+  orderableFields:
+    - fieldName: createdAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: description
+      orderByDirections:
+        enableAll: true
+    - fieldName: id
+      orderByDirections:
+        enableAll: true
+    - fieldName: key
+      orderByDirections:
+        enableAll: true
+    - fieldName: name
+      orderByDirections:
+        enableAll: true
+    - fieldName: updatedAt
+      orderByDirections:
+        enableAll: true
+  graphql:
+    selectMany:
+      queryRootField: linearTeams
+    selectUniques: []
+    orderByExpressionType: LinearTeamsOrderBy
+    filterInputTypeName: LinearTeamsFilterInput
+    aggregate:
+      queryRootField: linearTeamsAggregate
+  description: No description available
+
+---
+kind: ModelPermissions
+version: v1
+definition:
+  modelName: LinearTeams
+  permissions:
+    - role: admin
+      select:
+        filter: null
+

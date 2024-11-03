@@ -1,0 +1,17 @@
+services:
+  app_linear:
+    build:
+      context: .
+      dockerfile: .hasura-connector/Dockerfile
+    environment:
+      DUCKDB_URL: $APP_LINEAR_DUCKDB_URL
+      FEATURE_MIN_INSTANCES: $APP_LINEAR_FEATURE_MIN_INSTANCES
+      FEATURE_PERSISTENT_DATA: $APP_LINEAR_FEATURE_PERSISTENT_DATA
+      HASURA_SERVICE_TOKEN_SECRET: $APP_LINEAR_HASURA_SERVICE_TOKEN_SECRET
+      OTEL_EXPORTER_OTLP_ENDPOINT: $APP_LINEAR_OTEL_EXPORTER_OTLP_ENDPOINT
+      OTEL_SERVICE_NAME: $APP_LINEAR_OTEL_SERVICE_NAME
+      LINEAR_API_KEY: $LINEAR_API_KEY
+    extra_hosts:
+      - local.hasura.dev:host-gateway
+    ports:
+      - 6859:8080
