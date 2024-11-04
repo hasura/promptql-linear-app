@@ -1,198 +1,5 @@
-import { JSONValue } from "@hasura/ndc-lambda-sdk";
-import { GMail, GoogleCalendar } from "@hasura/ndc-duckduckapi/services";
-import { getOAuthCredentialsFromHeader, getDB, transaction } from "@hasura/ndc-duckduckapi";
-import gql from 'graphql-tag';
-
-export const LinearSyncSchema = `
-  CREATE TABLE IF NOT EXISTS linear_teams (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    key TEXT,
-    description TEXT,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS linear_issues (
-    id TEXT PRIMARY KEY,
-    team_id TEXT,
-    title TEXT,
-    description TEXT,
-    state TEXT,
-    priority INTEGER,
-    identifier TEXT,
-    number INTEGER,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    completed_at TIMESTAMP,
-    creator_email TEXT,
-    creator_name TEXT,
-    assignee_email TEXT,
-    assignee_name TEXT,
-    bot_type TEXT,
-    bot_user TEXT,
-    link_type TEXT,
-    link_url TEXT,
-    labels TEXT,
-    FOREIGN KEY(team_id) REFERENCES linear_teams(id),
-  );
-
-  CREATE TABLE IF NOT EXISTS linear_comments (
-    id TEXT PRIMARY KEY,
-    issue_id TEXT,
-    body TEXT,
-    user_email TEXT,
-    user_name TEXT,
-    bot_type TEXT,
-    bot_user TEXT,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP,
-    FOREIGN KEY(issue_id) REFERENCES linear_issues(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS linear_sync_state (
-    team_id TEXT PRIMARY KEY,
-    last_issue_sync TIMESTAMP,
-    last_project_sync TIMESTAMP,
-    FOREIGN KEY(team_id) REFERENCES linear_teams(id)
-  );
-
-  CREATE TABLE IF NOT EXISTS linear_comment_sync_state (
-    issue_id TEXT PRIMARY KEY,
-    last_comment_sync TIMESTAMP,
-    FOREIGN KEY(issue_id) REFERENCES linear_issues(id)
-  );
-`;
-
-interface TeamsResponse {
-  teams: {
-    nodes: LinearTeamResponse[];
-  };
-}
-
-interface TeamIssuesResponse {
-  team: {
-    issues: LinearPaginatedResponse<LinearIssueResponse>;
-  };
-}
-
-interface IssueCommentsResponse {
-  comments: LinearPaginatedResponse<LinearComment>;
-}
-
-interface LinearGraphQLResponse<T> {
-  data: T;
-  errors?: Array<{
-    message: string;
-    locations: Array<{
-      line: number;
-      column: number;
-    }>;
-    path: string[];
-  }>;
-}
-
-interface LinearPaginatedResponse<T> {
-  nodes: T[];
-  pageInfo: {
-    hasNextPage: boolean;
-    endCursor: string;
-  };
-}
-
-interface LinearState {
-  name: string;
-}
-
-interface LinearLabel {
-  name: string;
-}
-
-interface LinearUser {
-  name: string;
-  email: string;
-}
-
-interface LinearBotActor {
-  name: string;
-  userDisplayName: string;
-}
-
-interface LinearAttachement {
-  url: string;
-  sourceType: string;
-}
-
-interface LinearIssueResponse {
-  id: string;
-  title: string;
-  description: string;
-  number: number;
-  priority: number;
-  estimate: number | null;
-  state: {
-    name: string;
-  };
-  identifier: string;
-  team: {
-    id: string;
-    name: string;
-  };
-  project: {
-    id: string;
-    name: string;
-  } | null;
-  labels: LinearPaginatedResponse<LinearLabel>;
-  creator: LinearUser | null;
-  assignee: LinearUser | null;
-  botActor: LinearBotActor | null;
-  createdAt: string;
-  updatedAt: string;
-  completedAt: string | null;
-  attachments: LinearPaginatedResponse<LinearAttachement>;
-  comments: LinearPaginatedResponse<LinearComment>;
-}
-
-interface LinearTeamResponse {
-  id: string;
-  name: string;
-  key: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LinearProject {
-  id: string;
-  name: string;
-  description: string;
-  teamId: string;
-  state: string;
-  startDate: string;
-  targetDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface LinearComment {
-  id: string;
-  body: string;
-  user: LinearUser | null;
-  botActor: LinearBotActor | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface SyncState {
-  last_issue_sync: string;
-  repository: string;
-}
-
-interface IssueCommentSyncState {
-  issue_id: bigint;
-  last_comment_sync: string;
-}
-
+import { getDB, transaction } from "@hasura/ndc-duckduckapi";
+import * as linear from "./linear";
 
 export class LinearSyncManager {
   private url = 'https://api.linear.app/graphql';
@@ -213,7 +20,6 @@ export class LinearSyncManager {
       },
       body: query
     });
-    //console.log(`####QUERY \n ${query} \n\n`)
     if (!response.ok) {
       const error = await response.text().catch(() => null);
       throw new Error(`Linear API error (${response.status}): ${error}`);
@@ -292,7 +98,7 @@ export class LinearSyncManager {
     }
   }
 
-  public async syncTeams(): Promise<LinearTeamResponse[]> {
+  public async syncTeams(): Promise<linear.LinearTeamResponse[]> {
     const db = await getDB();
     const teams = await this.fetchTeams();
     await transaction(db, async (tx) => {
@@ -338,24 +144,8 @@ export class LinearSyncManager {
     return teams;
   }
 
-  private async fetchTeams(): Promise<LinearTeamResponse[]> {
-    const query = `
-      query Teams {
-        teams {
-          nodes {
-            id
-            name
-            key
-            description
-            createdAt
-            updatedAt
-          }
-        }
-      }
-    `;
-    
-    const response = await this.linearFetch(JSON.stringify({query: query}));
-    //console.log(JSON.stringify(response))
+  private async fetchTeams(): Promise<linear.LinearTeamResponse[]> {
+    const response = await this.linearFetch(JSON.stringify({query: linear.teamsQuery}));
     return response.data.teams.nodes;
   }
 
@@ -424,100 +214,14 @@ export class LinearSyncManager {
     }
   }
 
-  private async fetchAllIssues(teamId: string, since?: string): Promise<LinearIssueResponse[]> {
+  private async fetchAllIssues(teamId: string, since?: string): Promise<linear.LinearIssueResponse[]> {
     let hasNextPage = true;
     let cursor: string | undefined;
-    const issues : LinearIssueResponse[] = [];
+    const issues : linear.LinearIssueResponse[] = [];
     while (hasNextPage) {
-      const query = `
-        query TeamIssues($teamId: String!, $after: String, $filter: IssueFilter) {
-          team(id: $teamId) {
-            issues(
-              first: 20,
-              after: $after,
-              orderBy: updatedAt
-              filter: $filter
-            ) {
-              nodes {
-                id
-                title
-                description
-                number
-                identifier
-                priority
-                estimate
-                state {
-                  name
-                }
-                team {
-                  id
-                  name
-                }
-                project {
-                  id
-                  name
-                }
-                labels {
-                  nodes {
-                    name
-                  }
-                }
-                creator {
-                  id
-                  name
-                  email
-                }
-                assignee {
-                  id
-                  name
-                  email
-                }
-                createdAt
-                updatedAt
-                completedAt
-                botActor {
-                  name,
-                  type,
-                  subType,
-                  userDisplayName
-                }
-                attachments {
-                  nodes {
-                    url
-                    sourceType
-                  }
-                }
-                comments {
-                  nodes {
-                    id
-                    body
-                    summaryText
-                    botActor {
-                      name
-                      type
-                      subType
-                      userDisplayName
-                    }
-                    user {
-                      name
-                      email
-                    }
-                    createdAt
-                    updatedAt
-                  }
-                }
-              }
-              pageInfo {
-                hasNextPage
-                endCursor
-              }
-            }
-          }
-        }
-      `;
 
       const response = await this.linearFetch(JSON.stringify({
-        query: query, 
+        query: linear.issuesQuery, 
         variables: {
           teamId,
           after: cursor || null,
@@ -533,7 +237,7 @@ export class LinearSyncManager {
     return issues
   }
 
-  private async saveIssues(issues: LinearIssueResponse[], lastSync: string | undefined): Promise<void> {
+  private async saveIssues(issues: linear.LinearIssueResponse[], lastSync: string | undefined): Promise<void> {
     try {
       const db = await getDB();
       await transaction(db, async (tx) => {
@@ -605,7 +309,7 @@ export class LinearSyncManager {
     }
   }
 
-  private async saveComments(comments: LinearComment[], issueId: string, issueReadableId: string): Promise<void> {
+  private async saveComments(comments: linear.LinearComment[], issueId: string, issueReadableId: string): Promise<void> {
     try {
       const db = await getDB();
       await transaction(db, async (conn) => {

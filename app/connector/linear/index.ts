@@ -2,7 +2,9 @@
 import { start } from "@hasura/ndc-duckduckapi";
 import { makeConnector, duckduckapi } from "@hasura/ndc-duckduckapi";
 import * as path from "path";
-import { LinearSyncManager, LinearSyncSchema } from "./functions";
+import { LinearSyncManager } from "./functions";
+import { LinearSyncSchema } from "./linear";
+
 
 const connectorConfig: duckduckapi = {
   dbSchema: `
