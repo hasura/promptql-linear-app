@@ -397,63 +397,6 @@ export class LinearSyncManager {
     }
   }
 
-  public async searchIssues(query: string): Promise<any[]> {
-    try {
-      const db = await getDB();
-      return await db.all(`
-        SELECT i.*, t.name
-        FROM linear_issues i
-        JOIN linear_teams t ON t.id = i.team_id
-        AND (
-          i.title LIKE ?
-          OR i.description LIKE ?
-          OR i.creator_name LIKE ?
-          OR i.bot_type LIKE ?
-          OR i.bot_user LIKE ?
-          OR i.labels LIKE ?
-          OR i.identifier LIKE ?
-          OR t.name LIKE ?
-        )
-        ORDER BY i.updated_at DESC
-      `,
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`
-      );
-    } catch (error) {
-      console.error(`Failed to search issues with query "${query}":`, error);
-      throw error;
-    }
-  }
-
-  public async searchComments(query: string): Promise<any[]> {
-    try {
-      const db = await getDB();
-      return await db.all(`
-        SELECT c.*, i.number as issue_number
-        FROM linear_comments c
-        JOIN linear_issues i ON i.id = c.issue_id
-        AND (
-          c.body LIKE ?
-          OR c.user_name LIKE ?
-          OR c.bot_user LIKE ?
-        )
-        ORDER BY c.updated_at DESC
-      `,
-      `%${query}%`,
-      `%${query}%`,
-      `%${query}%`
-      );
-    } catch (error) {
-      console.error(`Failed to search comments with query "${query}":`, error);
-      throw error;
-    }
-  }
-
   public stop(): void {
     if (this.syncInterval) {
       console.log('Stopping sync process...');
