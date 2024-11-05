@@ -16,7 +16,7 @@ definition:
       description: No description available
     - name: createdAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp
     - name: id
       type: String
       description: No description available
@@ -25,7 +25,7 @@ definition:
       description: No description available
     - name: updatedAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp
     - name: userEmail
       type: String
       description: No description available

@@ -7,7 +7,7 @@ definition:
   fields:
     - name: createdAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp
     - name: description
       type: String
       description: No description available
@@ -16,13 +16,13 @@ definition:
       description: No description available
     - name: key
       type: String
-      description: No description available
+      description: "For team name searches, alternatively the column name can be used too."
     - name: name
       type: String
-      description: No description available
+      description: "For team name searches, alternatively the column key can be used too."
     - name: updatedAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp
   graphql:
     typeName: LinearTeams
     inputTypeName: LinearTeamsInput

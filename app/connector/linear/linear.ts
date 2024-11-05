@@ -9,6 +9,9 @@ export const LinearSyncSchema = `
     updated_at TIMESTAMP
   );
 
+  COMMENT ON COLUMN linear_teams.created_at IS 'This is an ISO formatted timestamp';
+  COMMENT ON COLUMN linear_teams.updated_at IS 'This is an ISO formatted timestamp';
+
   CREATE TABLE IF NOT EXISTS linear_issues (
     id TEXT PRIMARY KEY,
     team_id TEXT,
@@ -33,6 +36,10 @@ export const LinearSyncSchema = `
     FOREIGN KEY(team_id) REFERENCES linear_teams(id),
   );
 
+  COMMENT ON COLUMN linear_issues.created_at IS 'This is an ISO formatted timestamp';
+  COMMENT ON COLUMN linear_issues.created_at IS 'This is an ISO formatted timestamp';
+  COMMENT ON COLUMN linear_issues.completed_at IS 'This is an ISO formatted timestamp';
+
   CREATE TABLE IF NOT EXISTS linear_comments (
     id TEXT PRIMARY KEY,
     issue_id TEXT,
@@ -46,10 +53,12 @@ export const LinearSyncSchema = `
     FOREIGN KEY(issue_id) REFERENCES linear_issues(id)
   );
 
+  COMMENT ON COLUMN linear_comments.created_at IS 'This is an ISO formatted timestamp';
+  COMMENT ON COLUMN linear_comments.updated_at IS 'This is an ISO formatted timestamp';
+
   CREATE TABLE IF NOT EXISTS linear_sync_state (
     team_id TEXT PRIMARY KEY,
     last_issue_sync TIMESTAMP,
-    last_project_sync TIMESTAMP,
     FOREIGN KEY(team_id) REFERENCES linear_teams(id)
   );
 
@@ -61,8 +70,11 @@ export const LinearSyncSchema = `
 `;
 
 export const teamsQuery = `
-  query Teams {
-    teams {
+  query Teams($after: String) {
+    teams (
+      first: 30,
+      after: $after
+    ) {
       nodes {
         id
         name
@@ -70,6 +82,10 @@ export const teamsQuery = `
         description
         createdAt
         updatedAt
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }
@@ -79,7 +95,7 @@ export const issuesQuery = `
   query TeamIssues($teamId: String!, $after: String, $filter: IssueFilter) {
     team(id: $teamId) {
       issues(
-        first: 20,
+        first: 50,
         after: $after,
         orderBy: updatedAt
         filter: $filter
@@ -103,7 +119,7 @@ export const issuesQuery = `
             id
             name
           }
-          labels {
+          labels (first: 10) {
             nodes {
               name
             }
@@ -127,29 +143,10 @@ export const issuesQuery = `
             subType,
             userDisplayName
           }
-          attachments {
+          attachments (first: 2){
             nodes {
               url
               sourceType
-            }
-          }
-          comments {
-            nodes {
-              id
-              body
-              summaryText
-              botActor {
-                name
-                type
-                subType
-                userDisplayName
-              }
-              user {
-                name
-                email
-              }
-              createdAt
-              updatedAt
             }
           }
         }
@@ -157,6 +154,39 @@ export const issuesQuery = `
           hasNextPage
           endCursor
         }
+      }
+    }
+  }
+`;
+
+export const commentsQuery = `
+  query Comments($after: String, $filter: CommentFilter) {
+    comments(
+      first: 5,
+      after: $after,
+      orderBy: updatedAt
+      filter: $filter
+    ) {
+      nodes {
+        id
+        body
+        summaryText
+        botActor {
+          name
+          type
+          subType
+          userDisplayName
+        }
+        user {
+          name
+          email
+        }
+        createdAt
+        updatedAt
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
       }
     }
   }

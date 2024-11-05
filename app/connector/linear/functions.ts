@@ -1,6 +1,17 @@
 import { getDB, transaction } from "@hasura/ndc-duckduckapi";
 import * as linear from "./linear";
 
+/**
+ * Linear implements rate limiting based on depth of the graphql requests.
+ * See https://developers.linear.app/docs/graphql/working-with-the-graphql-api/rate-limiting
+ * 
+ * Hence I am avoiding fetching comments from a single GraphQL query on issue fetching.
+ * Comments are fetched separately.
+ * Since we fetch comments, only if the issue updatedAt is greater than last sync, 
+ * it should reduce the request complexity and work within limits.
+ * The limits resets in 1 hour, hence the re-sync is set at 61 minutes.
+ * Also, on the next sync cycle, it will first sync teams that didn't got touched in the last cycle first (in case we still are hitting limits)
+*/
 export class LinearSyncManager {
   private url = 'https://api.linear.app/graphql';
   private token: string = '';
@@ -20,6 +31,7 @@ export class LinearSyncManager {
       },
       body: query
     });
+
     if (!response.ok) {
       const error = await response.text().catch(() => null);
       throw new Error(`Linear API error (${response.status}): ${error}`);
@@ -30,7 +42,8 @@ export class LinearSyncManager {
   async initialize(token: string): Promise<boolean> {
     try {
 
-      this.getSyncStatus();
+      console.log("Last sync status:" + await this.getSyncStatus())
+
       console.log('Starting initialization...');
       this.token = token;
       
@@ -46,8 +59,8 @@ export class LinearSyncManager {
       console.log('Initial sync complete');
       
       // Set up continuous sync
-      console.log('Setting up continuous sync (5 minute interval)...');
-      this.syncInterval = setInterval(() => this.syncIssuesAndComments(), 5 * 60 * 1000);
+      console.log('Setting up continuous sync (1 hour interval)...');
+      this.syncInterval = setInterval(() => this.syncIssuesAndComments(), 61 * 60 * 1000);
       
       return true;
     } catch (error) {
@@ -78,17 +91,20 @@ export class LinearSyncManager {
         await this.updateIssueSyncState(team.id);
 
         for (const issue of issues) {
-          if (issue.comments && issue.comments.nodes.length > 0) {
-            const lastCommentSync = await this.getCommentSyncState(issue.id, issue.identifier);
-            
-            const needsCommentSync = !lastCommentSync || 
+          const lastCommentSync = await this.getCommentSyncState(issue.id, issue.identifier);
+          
+          const needsCommentSync = !lastCommentSync || 
               new Date(issue.updatedAt) > new Date(lastCommentSync);
-            
-            if (needsCommentSync) {
-              console.log(`Syncing comments for issue #${issue.identifier} (${issue.comments.nodes.length} comments)`);
-              await this.saveComments(issue.comments.nodes, issue.id, issue.identifier);
-              await this.updateCommentSyncState(issue.id, issue.identifier);
-            }
+  
+          if (needsCommentSync) {
+            console.log(`Syncing comments for issue #${issue.identifier}`);
+
+            const comments = await this.fetchComments(
+              issue.id,
+              lastCommentSync || undefined
+            );
+            await this.saveComments(comments, issue.id, issue.identifier);
+            await this.updateCommentSyncState(issue.id, issue.identifier);
           }
         }
       }
@@ -100,53 +116,90 @@ export class LinearSyncManager {
 
   public async syncTeams(): Promise<linear.LinearTeamResponse[]> {
     const db = await getDB();
-    const teams = await this.fetchTeams();
-    await transaction(db, async (tx) => {
-      for (const team of teams) {
-        await tx.run(`
-          INSERT INTO linear_teams (
-            id,
-            name,
-            key,
-            description,
-            created_at,
-            updated_at
-          ) VALUES (
-            ?, ?, ?, ?, ?, ?
-          )
-          ON CONFLICT(id) DO UPDATE SET
-            name = excluded.name,
-            key = excluded.key,
-            description = excluded.description,
-            updated_at = excluded.updated_at
-        `,
-          team.id,
-          team.name,
-          team.key,
-          team.description,
-          new Date(team.createdAt),
-          new Date(team.updatedAt)
-        );
+    try {
+      const teams = await this.fetchTeams();
+      await transaction(db, async (tx) => {
+        for (const team of teams) {
+          await tx.run(`
+            INSERT INTO linear_teams (
+              id,
+              name,
+              key,
+              description,
+              created_at,
+              updated_at
+            ) VALUES (
+              ?, ?, ?, ?, ?, ?
+            )
+            ON CONFLICT(id) DO UPDATE SET
+              name = excluded.name,
+              key = excluded.key,
+              description = excluded.description,
+              updated_at = excluded.updated_at
+          `,
+            team.id,
+            team.name,
+            team.key,
+            team.description,
+            new Date(team.createdAt),
+            new Date(team.updatedAt)
+          );
 
-        // Update sync state for this team
-        await tx.run(`
-          INSERT INTO linear_sync_state (
-            team_id,
-            last_issue_sync,
-            last_project_sync
-          ) VALUES (
-            ?, NULL, NULL
-          )
-          ON CONFLICT(team_id) DO NOTHING
-        `, [team.id]);
+          // Update sync state for this team
+          await tx.run(`
+            INSERT INTO linear_sync_state (
+              team_id,
+              last_issue_sync
+            ) VALUES (
+              ?, NULL
+            )
+            ON CONFLICT(team_id) DO NOTHING
+          `, [team.id]);
+        }
+      });
+
+      // reverse order by teams in terms of last sync state
+      const orderedTeams : linear.LinearTeamResponse[] = []
+      try {
+        const result = await db.all(`
+          SELECT team_id
+          FROM linear_sync_state
+          ORDER BY last_issue_sync ASC NULLS FIRST`);
+        for (const row of result) {
+          const found = teams.find(function(value) {
+            return (value.id == row.team_id);
+          })
+          if(found) {
+            orderedTeams.push(found)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to get issue sync state:', error);
+        throw error;
       }
-    });
-    return teams;
+      return orderedTeams;
+    } catch (error) {
+      console.error('Failed to fetch and sync teams:', error);
+      throw error;
+    }
   }
 
   private async fetchTeams(): Promise<linear.LinearTeamResponse[]> {
-    const response = await this.linearFetch(JSON.stringify({query: linear.teamsQuery}));
-    return response.data.teams.nodes;
+    let hasNextPage = true;
+    let cursor: string | undefined;
+    const teams : linear.LinearTeamResponse[] = [];
+    while (hasNextPage) {
+      const response = await this.linearFetch(JSON.stringify({
+        query: linear.teamsQuery, 
+        variables: {
+          after: cursor || null,
+        }
+      })) 
+      teams.push(...response.data.teams.nodes)
+      hasNextPage = response.data.teams.pageInfo.hasNextPage;
+      cursor = response.data.teams.pageInfo.endCursor;
+    }
+    return teams;
   }
 
   private async getLastIssueSyncState(team: string): Promise<string | undefined> {
@@ -235,6 +288,45 @@ export class LinearSyncManager {
     }
     
     return issues
+  }
+
+  private async fetchComments(issueId: string, since?: string): Promise<linear.LinearComment[]> {
+    let hasNextPage = true;
+    let cursor: string | undefined;
+    const comments : linear.LinearComment[] = [];
+    while (hasNextPage) {
+
+      const response = await this.linearFetch(JSON.stringify({
+        query: linear.commentsQuery, 
+        variables: {
+          after: cursor || null,
+          filter: since ? {
+            and: [
+              { updatedAt: {gte: since} }, 
+              { 
+                issue: {
+                  id: {
+                    eq: issueId
+                  }
+                }
+              }
+            ]
+          } : { 
+            issue: {
+              id: {
+                eq: issueId
+              }
+            }
+          }
+        }
+      })) 
+       
+      comments.push(...response.data.comments.nodes)
+      hasNextPage = response.data.comments.pageInfo.hasNextPage;
+      cursor = response.data.comments.pageInfo.endCursor;
+    }
+    
+    return comments
   }
 
   private async saveIssues(issues: linear.LinearIssueResponse[], lastSync: string | undefined): Promise<void> {
@@ -364,33 +456,26 @@ export class LinearSyncManager {
     }
   }
 
-  public async getSyncStatus(): Promise<any> {
+  public async getSyncStatus(): Promise<string> {
     try {
       const db = await getDB();
       const teams = await db.all(`
         SELECT id, name
         FROM linear_teams`);
       
-      const stats = []
+      let result = ""
       for (const team of teams) {
         const issueSync = await this.getLastIssueSyncState(team.id);
         const repoStats = await db.all(`
           SELECT 
-            COUNT(DISTINCT i.id) as total_issues,
-            COUNT(DISTINCT c.id) as total_comments,
-            MAX(i.updated_at) as latest_issue_update,
-            MAX(c.updated_at) as latest_comment_update
-          FROM linear_issues i
-          LEFT JOIN linear_comments c ON i.id = c.issue_id
-        `);
-          stats.push({
-            team: team.name,
-            last_issue_sync: issueSync,
-            stats: repoStats[0]
-          })
+            COUNT(DISTINCT id) as total_issues,
+          FROM linear_issues
+          WHERE team_id = ?
+        `, team.id);
+        result = result + "\nTeam " + team.name + ", total issues: " + repoStats[0].total_issues + ", last synced: " + issueSync;
       }
   
-      return stats;
+      return result;
     } catch (error) {
       console.error('Failed to get sync status:', error);
       throw error;

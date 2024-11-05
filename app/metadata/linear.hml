@@ -225,7 +225,7 @@ definition:
                   type: named
                   name: String
             created_at:
-              description: No description available
+              description: This is an ISO formatted timestamp
               type:
                 type: nullable
                 underlying_type:
@@ -246,7 +246,7 @@ definition:
                   type: named
                   name: String
             updated_at:
-              description: No description available
+              description: This is an ISO formatted timestamp
               type:
                 type: nullable
                 underlying_type:
@@ -298,14 +298,14 @@ definition:
                   type: named
                   name: String
             completed_at:
-              description: No description available
+              description: This is an ISO formatted timestamp
               type:
                 type: nullable
                 underlying_type:
                   type: named
                   name: Timestamp
             created_at:
-              description: No description available
+              description: This is an ISO formatted timestamp
               type:
                 type: nullable
                 underlying_type:
@@ -437,7 +437,7 @@ definition:
           description: No description available
           fields:
             created_at:
-              description: No description available
+              description: This is an ISO formatted timestamp
               type:
                 type: nullable
                 underlying_type:
@@ -472,7 +472,7 @@ definition:
                   type: named
                   name: String
             updated_at:
-              description: No description available
+              description: This is an ISO formatted timestamp
               type:
                 type: nullable
                 underlying_type:

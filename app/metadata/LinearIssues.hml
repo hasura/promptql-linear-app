@@ -19,10 +19,10 @@ definition:
       description: No description available
     - name: completedAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp
     - name: createdAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp
     - name: creatorEmail
       type: String
       description: No description available
