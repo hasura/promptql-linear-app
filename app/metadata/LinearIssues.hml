@@ -4,31 +4,32 @@ version: v1
 definition:
   name: LinearIssues
   description: No description available
+
   fields:
     - name: assigneeEmail
       type: String
-      description: No description available
+      description: email of the user who worked on this issue
     - name: assigneeName
       type: String
-      description: No description available
+      description: Name of the user who worked on this issue
     - name: botType
       type: String
-      description: No description available
+      description: Name of the external source or bot that created this issue. Generally this indicates that issue was imported from Github, Jira, Sentry, Slack, Zendesk, Incident.io
     - name: botUser
       type: String
-      description: No description available
+      description: The username of actor in the external source who prompted the creation of this issue
     - name: completedAt
       type: Timestamp
-      description: This is an ISO formatted timestamp
+      description: This is an ISO formatted timestamp for when the issue is marked completed or Done
     - name: createdAt
       type: Timestamp
-      description: This is an ISO formatted timestamp
+      description: This is an ISO formatted timestamp for when the issue was created
     - name: creatorEmail
       type: String
-      description: No description available
+      description: email of the user who created the issue
     - name: creatorName
       type: String
-      description: No description available
+      description: Name of the user who created the issue
     - name: description
       type: String
       description: No description available
@@ -37,13 +38,13 @@ definition:
       description: No description available
     - name: identifier
       type: String
-      description: No description available
+      description: More user friendly id of the issue. Alternative to the id column. Both can be used to search an issue.
     - name: labels
       type: String
-      description: No description available
+      description: CSV list of labels
     - name: linkType
       type: String
-      description: No description available
+      description:
     - name: linkUrl
       type: String
       description: No description available
@@ -52,10 +53,10 @@ definition:
       description: No description available
     - name: priority
       type: Int
-      description: No description available
+      description: The priority of the issue. 0 = No priority, 1 = Urgent, 2 = High, 3 = Normal, 4 = Low
     - name: state
       type: String
-      description: No description available
+      description: Possible states are Backlog, Triage, Todo, In Progress, In Review, Done, Blocked, Canceled, Wont Do, Duplicate
     - name: teamId
       type: String
       description: No description available
@@ -64,7 +65,43 @@ definition:
       description: No description available
     - name: updatedAt
       type: Timestamp
-      description: No description available
+      description: This is an ISO formatted timestamp for when the issue was last updated.
+    - name: stateBacklogCompletedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the Backlog state ended for the issue. With Subtracting the stateBacklogCreatedAt, this can be used to calculate for how long an issue was in Backlog state
+    - name: stateBacklogCreatedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the issue was moved to Backlog state. Null means the issue was never in Backlog state, unless the state column is Backlog
+    - name: stateBlockedCompletedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the Blocked state ended for the issue. With Subtracting the stateBlockedCreatedAt, this can be used to calculate for how long an issue was in Blocked state
+    - name: stateBlockedCreatedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the issue was moved to Blocked state. Null means the issue was never in Blocked state, unless the state column is Blocked
+    - name: stateInprogressCompletedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the 'In Progress' state ended for the issue. With Subtracting the stateInprogressCreatedAt, this can be used to calculate for how long an issue was in 'In Progress' state
+    - name: stateInprogressCreatedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the issue was moved to 'In Progress' state. Null means the issue was never in 'In Progress' state, unless the state column is 'In Progress'
+    - name: stateReviewCompletedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the 'In Review' state ended for the issue. With Subtracting the stateReviewCreatedAt, this can be used to calculate for how long an issue was in 'In Review' state
+    - name: stateReviewCreatedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the issue was moved to 'In Review' state. Null means the issue was never in 'In Review' state, unless the state column is 'In Review'
+    - name: stateTodoCompletedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the Todo state ended for the issue. With Subtracting the stateTodoCreatedAt, this can be used to calculate for how long an issue was in Todo state
+    - name: stateTodoCreatedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the issue was moved to Todo state. Null means the issue was never in Todo state, unless the state column is Todo
+    - name: stateTriageCompletedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the Triage state ended for the issue. With Subtracting the stateTriageCreatedAt, this can be used to calculate for how long an issue was in Triage state
+    - name: stateTriageCreatedAt
+      type: Timestamp
+      description: This is an ISO formatted timestamp, This indicates when the issue was moved to Triage state. Null means the issue was never in Triage state, unless the state column is Triage
   graphql:
     typeName: LinearIssues
     inputTypeName: LinearIssuesInput
@@ -132,6 +169,42 @@ definition:
         updatedAt:
           column:
             name: updated_at
+        stateBacklogCompletedAt:
+          column:
+            name: state_backlog_completed_at
+        stateBacklogCreatedAt:
+          column:
+            name: state_backlog_created_at
+        stateBlockedCompletedAt:
+          column:
+            name: state_blocked_completed_at
+        stateBlockedCreatedAt:
+          column:
+            name: state_blocked_created_at
+        stateInprogressCompletedAt:
+          column:
+            name: state_inprogress_completed_at
+        stateInprogressCreatedAt:
+          column:
+            name: state_inprogress_created_at
+        stateReviewCompletedAt:
+          column:
+            name: state_review_completed_at
+        stateReviewCreatedAt:
+          column:
+            name: state_review_created_at
+        stateTodoCompletedAt:
+          column:
+            name: state_todo_completed_at
+        stateTodoCreatedAt:
+          column:
+            name: state_todo_created_at
+        stateTriageCompletedAt:
+          column:
+            name: state_triage_completed_at
+        stateTriageCreatedAt:
+          column:
+            name: state_triage_created_at
 
 ---
 kind: TypePermissions
@@ -162,6 +235,18 @@ definition:
           - teamId
           - title
           - updatedAt
+          - stateBacklogCompletedAt
+          - stateBacklogCreatedAt
+          - stateBlockedCompletedAt
+          - stateBlockedCreatedAt
+          - stateInprogressCompletedAt
+          - stateInprogressCreatedAt
+          - stateReviewCompletedAt
+          - stateReviewCreatedAt
+          - stateTodoCompletedAt
+          - stateTodoCreatedAt
+          - stateTriageCompletedAt
+          - stateTriageCreatedAt
 
 ---
 kind: BooleanExpressionType
@@ -211,6 +296,30 @@ definition:
         - fieldName: title
           booleanExpressionType: StringBoolExp
         - fieldName: updatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateBacklogCompletedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateBacklogCreatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateBlockedCompletedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateBlockedCreatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateInprogressCompletedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateInprogressCreatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateReviewCompletedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateReviewCreatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateTodoCompletedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateTodoCreatedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateTriageCompletedAt
+          booleanExpressionType: TimestampBoolExp
+        - fieldName: stateTriageCreatedAt
           booleanExpressionType: TimestampBoolExp
       comparableRelationships: []
   logicalOperators:
@@ -268,6 +377,30 @@ definition:
         - fieldName: title
           aggregateExpression: StringAggExp
         - fieldName: updatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateBacklogCompletedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateBacklogCreatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateBlockedCompletedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateBlockedCreatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateInprogressCompletedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateInprogressCreatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateReviewCompletedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateReviewCreatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateTodoCompletedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateTodoCreatedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateTriageCompletedAt
+          aggregateExpression: TimestampAggExp
+        - fieldName: stateTriageCreatedAt
           aggregateExpression: TimestampAggExp
   count:
     enable: true
@@ -344,6 +477,42 @@ definition:
       orderByDirections:
         enableAll: true
     - fieldName: updatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateBacklogCompletedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateBacklogCreatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateBlockedCompletedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateBlockedCreatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateInprogressCompletedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateInprogressCreatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateReviewCompletedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateReviewCreatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateTodoCompletedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateTodoCreatedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateTriageCompletedAt
+      orderByDirections:
+        enableAll: true
+    - fieldName: stateTriageCreatedAt
       orderByDirections:
         enableAll: true
   graphql:

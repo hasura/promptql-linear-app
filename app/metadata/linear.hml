@@ -225,7 +225,7 @@ definition:
                   type: named
                   name: String
             created_at:
-              description: This is an ISO formatted timestamp
+              description: No description available
               type:
                 type: nullable
                 underlying_type:
@@ -246,7 +246,7 @@ definition:
                   type: named
                   name: String
             updated_at:
-              description: This is an ISO formatted timestamp
+              description: No description available
               type:
                 type: nullable
                 underlying_type:
@@ -266,6 +266,23 @@ definition:
                 underlying_type:
                   type: named
                   name: String
+        linear_history_sync_state:
+          description: No description available
+          fields:
+            issue_id:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: String
+            last_history_sync:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
         linear_issues:
           description: No description available
           fields:
@@ -298,14 +315,14 @@ definition:
                   type: named
                   name: String
             completed_at:
-              description: This is an ISO formatted timestamp
+              description: No description available
               type:
                 type: nullable
                 underlying_type:
                   type: named
                   name: Timestamp
             created_at:
-              description: This is an ISO formatted timestamp
+              description: No description available
               type:
                 type: nullable
                 underlying_type:
@@ -388,6 +405,90 @@ definition:
                 underlying_type:
                   type: named
                   name: String
+            state_backlog_completed_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_backlog_created_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_blocked_completed_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_blocked_created_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_inprogress_completed_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_inprogress_created_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_review_completed_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_review_created_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_todo_completed_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_todo_created_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_triage_completed_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
+            state_triage_created_at:
+              description: No description available
+              type:
+                type: nullable
+                underlying_type:
+                  type: named
+                  name: Timestamp
             team_id:
               description: No description available
               type:
@@ -419,13 +520,6 @@ definition:
                 underlying_type:
                   type: named
                   name: Timestamp
-            last_project_sync:
-              description: No description available
-              type:
-                type: nullable
-                underlying_type:
-                  type: named
-                  name: Timestamp
             team_id:
               description: No description available
               type:
@@ -437,7 +531,7 @@ definition:
           description: No description available
           fields:
             created_at:
-              description: This is an ISO formatted timestamp
+              description: No description available
               type:
                 type: nullable
                 underlying_type:
@@ -472,7 +566,7 @@ definition:
                   type: named
                   name: String
             updated_at:
-              description: This is an ISO formatted timestamp
+              description: No description available
               type:
                 type: nullable
                 underlying_type:
@@ -489,6 +583,12 @@ definition:
           description: No description available
           arguments: {}
           type: linear_comments
+          uniqueness_constraints: {}
+          foreign_keys: {}
+        - name: linear_history_sync_state
+          description: No description available
+          arguments: {}
+          type: linear_history_sync_state
           uniqueness_constraints: {}
           foreign_keys: {}
         - name: linear_issues

@@ -9,9 +9,6 @@ export const LinearSyncSchema = `
     updated_at TIMESTAMP
   );
 
-  COMMENT ON COLUMN linear_teams.created_at IS 'This is an ISO formatted timestamp';
-  COMMENT ON COLUMN linear_teams.updated_at IS 'This is an ISO formatted timestamp';
-
   CREATE TABLE IF NOT EXISTS linear_issues (
     id TEXT PRIMARY KEY,
     team_id TEXT,
@@ -24,6 +21,18 @@ export const LinearSyncSchema = `
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     completed_at TIMESTAMP,
+    state_backlog_created_at TIMESTAMP,
+    state_backlog_completed_at TIMESTAMP,
+    state_triage_created_at TIMESTAMP,
+    state_triage_completed_at TIMESTAMP,
+    state_todo_created_at TIMESTAMP,
+    state_todo_completed_at TIMESTAMP,
+    state_inprogress_created_at TIMESTAMP,
+    state_inprogress_completed_at TIMESTAMP,
+    state_review_created_at TIMESTAMP,
+    state_review_completed_at TIMESTAMP,
+    state_blocked_created_at TIMESTAMP,
+    state_blocked_completed_at TIMESTAMP,
     creator_email TEXT,
     creator_name TEXT,
     assignee_email TEXT,
@@ -35,10 +44,6 @@ export const LinearSyncSchema = `
     labels TEXT,
     FOREIGN KEY(team_id) REFERENCES linear_teams(id),
   );
-
-  COMMENT ON COLUMN linear_issues.created_at IS 'This is an ISO formatted timestamp';
-  COMMENT ON COLUMN linear_issues.created_at IS 'This is an ISO formatted timestamp';
-  COMMENT ON COLUMN linear_issues.completed_at IS 'This is an ISO formatted timestamp';
 
   CREATE TABLE IF NOT EXISTS linear_comments (
     id TEXT PRIMARY KEY,
@@ -53,9 +58,6 @@ export const LinearSyncSchema = `
     FOREIGN KEY(issue_id) REFERENCES linear_issues(id)
   );
 
-  COMMENT ON COLUMN linear_comments.created_at IS 'This is an ISO formatted timestamp';
-  COMMENT ON COLUMN linear_comments.updated_at IS 'This is an ISO formatted timestamp';
-
   CREATE TABLE IF NOT EXISTS linear_sync_state (
     team_id TEXT PRIMARY KEY,
     last_issue_sync TIMESTAMP,
@@ -65,6 +67,12 @@ export const LinearSyncSchema = `
   CREATE TABLE IF NOT EXISTS linear_comment_sync_state (
     issue_id TEXT PRIMARY KEY,
     last_comment_sync TIMESTAMP,
+    FOREIGN KEY(issue_id) REFERENCES linear_issues(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS linear_history_sync_state (
+    issue_id TEXT PRIMARY KEY,
+    last_history_sync TIMESTAMP,
     FOREIGN KEY(issue_id) REFERENCES linear_issues(id)
   );
 `;
@@ -192,6 +200,28 @@ export const commentsQuery = `
   }
 `;
 
+export const issueHistoryQuery = `
+  query IssueHistory($issueId: String!, $after: String, $first: Int, $orderBy: PaginationOrderBy) {
+    issue(id: $issueId) {
+      history(after: $after, first: $first, orderBy: $orderBy) {
+        nodes {
+          fromState {
+            name
+          }
+          toState {
+            name
+          }
+          createdAt
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+`;
+
 export interface TeamsResponse {
   teams: {
     nodes: LinearTeamResponse[];
@@ -206,6 +236,13 @@ export interface TeamIssuesResponse {
 
 export interface IssueCommentsResponse {
   comments: LinearPaginatedResponse<LinearComment>;
+}
+
+export interface IssueHistoryResponse {
+  issue: {
+    history: LinearPaginatedResponse<IssueHistory>;
+    createdAt: string
+  }
 }
 
 export interface LinearGraphQLResponse<T> {
@@ -258,9 +295,7 @@ export interface LinearIssueResponse {
   number: number;
   priority: number;
   estimate: number | null;
-  state: {
-    name: string;
-  };
+  state: IssueState;
   identifier: string;
   team: {
     id: string;
@@ -321,3 +356,17 @@ export interface IssueCommentSyncState {
   last_comment_sync: string;
 }
 
+export interface IssueHistorySyncState {
+  issue_id: bigint;
+  last_history_sync: string;
+}
+
+export interface IssueHistory {
+  fromState: IssueState;
+  toState: IssueState;
+  createdAt: string;
+}
+
+export interface IssueState {
+  name: string;
+} 

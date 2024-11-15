@@ -91,26 +91,45 @@ export class LinearSyncManager {
         await this.updateIssueSyncState(team.id);
 
         for (const issue of issues) {
-          const lastCommentSync = await this.getCommentSyncState(issue.id, issue.identifier);
-          
-          const needsCommentSync = !lastCommentSync || 
-              new Date(issue.updatedAt) > new Date(lastCommentSync);
-  
-          if (needsCommentSync) {
-            console.log(`Syncing comments for issue #${issue.identifier}`);
-
-            const comments = await this.fetchComments(
-              issue.id,
-              lastCommentSync || undefined
-            );
-            await this.saveComments(comments, issue.id, issue.identifier);
-            await this.updateCommentSyncState(issue.id, issue.identifier);
-          }
+          await this.syncCommentsForIssue(issue);
+          await this.syncHistoryForIssue(issue);
         }
       }
       
     } catch (error) {
       console.error('Sync cycle failed:', error);
+    }
+  }
+  
+  private async syncCommentsForIssue(issue: linear.LinearIssueResponse) {
+    const lastCommentSync = await this.getCommentSyncState(issue.id, issue.identifier);
+          
+    const needsCommentSync = !lastCommentSync || 
+        new Date(issue.updatedAt) > new Date(lastCommentSync);
+
+    if (needsCommentSync) {
+      console.log(`Syncing comments for issue #${issue.identifier}`);
+
+      const comments = await this.fetchComments(
+        issue.id,
+        lastCommentSync || undefined
+      );
+      await this.saveComments(comments, issue.id, issue.identifier);
+      await this.updateCommentSyncState(issue.id, issue.identifier);
+    }
+  }
+
+  private async syncHistoryForIssue(issue: linear.LinearIssueResponse) {
+    const lastHistorySync = await this.getHistorySyncState(issue.id, issue.identifier);
+          
+    const needsHistorySync = !lastHistorySync || 
+        new Date(issue.updatedAt) > new Date(lastHistorySync);
+
+    if (needsHistorySync) {
+      console.log(`Syncing history for issue #${issue.identifier}`);
+      const history = await this.fetchHistory(issue.id);
+      await this.saveHistory(history, issue.id, issue.identifier, issue.createdAt);
+      await this.updateHistorySyncState(issue.id, issue.identifier);
     }
   }
 
@@ -233,6 +252,22 @@ export class LinearSyncManager {
     }
   }
 
+  private async getHistorySyncState(issueId: string, issueReadableId: string): Promise<string | null> {
+    const db = await getDB();
+    try {
+      const result = await db.all(
+        `SELECT last_history_sync 
+         FROM linear_history_sync_state 
+         WHERE issue_id = ?`,
+        issueId
+      );
+      return result.length > 0 ? result[0].last_history_sync : null;
+    } catch (error) {
+      console.error(`Failed to get issue history sync state for issue ${issueReadableId}:`, error);
+      throw error;
+    }
+  }
+
   private async updateIssueSyncState(team: string): Promise<void> {
     try {
     const db = await getDB();
@@ -263,6 +298,23 @@ export class LinearSyncManager {
       console.log(`Comment sync state updated for issue ${issueReadableId}`);
     } catch (error) {
       console.error(`Failed to update comment sync state for issue ${issueReadableId}:`, error);
+      throw error;
+    }
+  }
+
+  private async updateHistorySyncState(issueId: string, issueReadableId: string): Promise<void> {
+    try {
+      const db = await getDB();
+      await transaction(db, async (conn) => {
+        await conn.run(`
+          INSERT INTO linear_history_sync_state (issue_id, last_history_sync)
+          VALUES (?, ?)
+          ON CONFLICT(issue_id) DO UPDATE SET last_history_sync = ?
+        `, issueId, new Date().toISOString(), new Date().toISOString());
+      });
+      console.log(`History sync state updated for issue ${issueReadableId}`);
+    } catch (error) {
+      console.error(`Failed to update history sync state for issue ${issueReadableId}:`, error);
       throw error;
     }
   }
@@ -327,6 +379,30 @@ export class LinearSyncManager {
     }
     
     return comments
+  }
+
+  private async fetchHistory(issueId: string): Promise<linear.IssueHistory[]> {
+    let hasNextPage = true;
+    let cursor: string | undefined;
+    const history : linear.IssueHistory[] = [];
+    while (hasNextPage) {
+
+      const response = await this.linearFetch(JSON.stringify({
+        query: linear.issueHistoryQuery, 
+        variables: {
+          issueId: issueId,
+          after: cursor || null,
+          first: 5,
+          orderBy: "createdAt"
+        }
+      })) 
+       
+      history.push(...response.data.issue.history.nodes)
+      hasNextPage = response.data.issue.history.pageInfo.hasNextPage;
+      cursor = response.data.issue.history.pageInfo.endCursor;
+    }
+    
+    return history
   }
 
   private async saveIssues(issues: linear.LinearIssueResponse[], lastSync: string | undefined): Promise<void> {
@@ -437,6 +513,134 @@ export class LinearSyncManager {
       console.log(`Saved ${comments.length} comments for issue ID ${issueReadableId}`);
     } catch (error) {
       console.error(`Failed to save comments for issue ${issueReadableId}:`, error);
+      throw error;
+    }
+  }
+
+  private async saveHistory(history: linear.IssueHistory[], issueId: string, issueReadableId: string, createdAt: string): Promise<void> {
+    try {
+      let backlogCreatedAt: string | undefined;
+      let backlogCompletedAt: string | undefined;
+      let triageCreatedAt: string | undefined;
+      let triageCompletedAt: string | undefined;
+      let todoCreatedAt: string | undefined;
+      let todoCompletedAt: string | undefined;
+      let inprogressCreatedAt: string | undefined;
+      let inprogressCompletedAt: string | undefined;
+      let reviewCreatedAt: string | undefined;
+      let reviewCompletedAt : string | undefined;
+      let blockedCreatedAt: string | undefined;
+      let blockedCompletedAt: string | undefined;
+
+      function setStateDate(state : string | null, updatedAt: string, isFrom: boolean) {
+        if (state == null) {
+          return
+        }
+        if(state == "Backlog") {
+          // Why !backlogCompletedAt ?
+          // An issue can be moved to a state any number of times. 
+          // Since the data is ordered from latest state change; ignore older occurrences of state completion.
+          if(isFrom && !backlogCompletedAt) {
+            backlogCompletedAt = updatedAt;
+          }
+          else {
+            backlogCreatedAt = updatedAt;
+          }
+        }
+        if(state == "Triage") {
+          if(isFrom && !triageCompletedAt) {
+            triageCompletedAt = updatedAt;
+          }
+          else {
+            triageCreatedAt = updatedAt;
+          }
+        }
+        if(state == "Todo") {
+          if(isFrom && !todoCompletedAt) {
+            todoCompletedAt = updatedAt;
+          }
+          else {
+            todoCreatedAt = updatedAt;
+          }
+        }
+        if(state == "In Progress") {
+          if(isFrom && !inprogressCompletedAt) {
+            inprogressCompletedAt = updatedAt;
+          }
+          else {
+            inprogressCreatedAt = updatedAt;
+          }
+        }
+        if(state == "In Review") {
+          if(isFrom && !reviewCompletedAt) {
+            reviewCompletedAt = updatedAt;
+          }
+          else {
+            reviewCreatedAt = updatedAt;
+          }
+        }
+        if(state == "Blocked") {
+          if(isFrom && !blockedCompletedAt) {
+            blockedCompletedAt = updatedAt;
+          }
+          else {
+            blockedCreatedAt = updatedAt;
+          }
+        }
+      };
+
+      for (const change of history) {
+        setStateDate(change.toState ? change.toState.name : null, change.createdAt, false);
+        setStateDate(change.fromState ? change.fromState.name : null, change.createdAt, true);
+      }
+      // Generally issues are created in Backlog, Triage or Todo state. The state in which issue is created is not captured in history.
+      // If these states have completion date but no created date. set the creation date for the state with issue creation date
+      if(backlogCompletedAt && !backlogCreatedAt) {
+        backlogCreatedAt = createdAt;
+      }
+      else if(triageCompletedAt && !triageCreatedAt) {
+        triageCreatedAt = createdAt;
+      }
+      else if(todoCompletedAt && !todoCreatedAt) {
+        todoCreatedAt = createdAt;
+      }
+
+      const db = await getDB();
+      await transaction(db, async (tx) => {
+        await tx.run(`
+          UPDATE linear_issues SET 
+            state_backlog_created_at = ?,
+            state_backlog_completed_at = ?,
+            state_triage_created_at = ?,
+            state_triage_completed_at = ?,
+            state_todo_created_at = ?,
+            state_todo_completed_at = ?,
+            state_inprogress_created_at = ?,
+            state_inprogress_completed_at = ?,
+            state_review_created_at = ?,
+            state_review_completed_at = ?,
+            state_blocked_created_at = ?,
+            state_blocked_completed_at = ?
+          WHERE id = ?
+        `,
+          backlogCreatedAt ? new Date(backlogCreatedAt): null,
+          backlogCompletedAt ? new Date(backlogCompletedAt): null,
+          triageCreatedAt ? new Date(triageCreatedAt): null,
+          triageCompletedAt ? new Date(triageCompletedAt): null,
+          todoCreatedAt ? new Date(todoCreatedAt): null,
+          todoCompletedAt ? new Date(todoCompletedAt): null,
+          inprogressCreatedAt ? new Date(inprogressCreatedAt): null,
+          inprogressCompletedAt ? new Date(inprogressCompletedAt): null,
+          reviewCreatedAt ? new Date(reviewCreatedAt): null,
+          reviewCompletedAt ? new Date(reviewCompletedAt): null,
+          blockedCreatedAt ? new Date(blockedCreatedAt): null,
+          blockedCompletedAt ? new Date(blockedCompletedAt): null,
+          issueId
+        );
+      });
+      console.log(`Saved state history for issue ID ${issueReadableId}`);
+    } catch (error) {
+      console.error('Failed to save issue history:', error);
       throw error;
     }
   }

@@ -7,16 +7,16 @@ definition:
   fields:
     - name: body
       type: String
-      description: No description available
+      description: Content of the comment
     - name: botType
       type: String
-      description: No description available
+      description: Name of the external source or bot that added this comment. Generally this indicates that issue was imported from Github, Jira, Sentry, Slack, Zendesk, Incident.io
     - name: botUser
       type: String
-      description: No description available
+      description: The username of actor in the external source who added this comment
     - name: createdAt
       type: Timestamp
-      description: This is an ISO formatted timestamp
+      description: This is an ISO formatted timestamp for when the comment was created.
     - name: id
       type: String
       description: No description available
@@ -25,7 +25,7 @@ definition:
       description: No description available
     - name: updatedAt
       type: Timestamp
-      description: This is an ISO formatted timestamp
+      description: This is an ISO formatted timestamp for when the comment was last updated.
     - name: userEmail
       type: String
       description: No description available

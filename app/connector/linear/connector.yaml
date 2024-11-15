@@ -3,7 +3,7 @@ version: v2
 definition:
   name: linear
   subgraph: app
-  source: hasura/duckduckapi:v0.5.2
+  source: hasura/duckduckapi:v0.5.3
   context: .
   envMapping:
     DUCKDB_URL:
